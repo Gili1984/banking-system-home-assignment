@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getAccounts } from '../../pages/AccountDashboard'
+import { getAccounts } from '../services/accuont.service'
 
 export const useAccounts = () => {
   return useQuery({
@@ -7,3 +7,4 @@ export const useAccounts = () => {
     queryFn: getAccounts,
   })
 }
+

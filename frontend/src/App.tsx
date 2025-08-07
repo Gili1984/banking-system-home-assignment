@@ -1,11 +1,12 @@
 
 import './App.css'
+import AccountDashboard from './pages/AccountDashboard'
 
 function App() {
 
   return (
     <>
-      <h1>Vite + React</h1> 
+      <AccountDashboard/>
     </>
   )
 }
