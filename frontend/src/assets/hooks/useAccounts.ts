@@ -1,10 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
-import { getAccounts } from '../services/accuont.service'
+import {  getAccountsByCustomerId } from '../services/accuont.service'
 
-export const useAccounts = () => {
+
+// export const useAccounts = (customerId?: string) => {
+//   return useQuery({
+//     queryKey: customerId ? ['accounts', customerId] : ['accounts'],
+//     queryFn: () =>
+//       customerId ? getAccountsByCustomerId(customerId) : getAccounts(),
+//     enabled: customerId !== undefined || customerId === undefined,
+//   });
+// };
+
+export const useAccounts = (customerId: string) => {
   return useQuery({
-    queryKey: ['accounts'],
-    queryFn: getAccounts,
-  })
-}
-
+    queryKey: ['accounts', customerId],
+    queryFn: () => getAccountsByCustomerId(customerId),
+    enabled: !!customerId, 
+  });
+};

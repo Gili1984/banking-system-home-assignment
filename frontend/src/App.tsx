@@ -1,12 +1,12 @@
-
 import './App.css'
-import AccountDashboard from './pages/AccountDashboard'
+import { Home } from './assets/pages/home'
+
 
 function App() {
 
   return (
     <>
-      <AccountDashboard/>
+    <Home/>
     </>
   )
 }
