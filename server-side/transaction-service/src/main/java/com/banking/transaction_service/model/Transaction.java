@@ -1,4 +1,4 @@
-package com.banking.account_service.model;
+package com.banking.transaction_service.model;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -8,24 +8,22 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Document(collection = "account")
+@Document(collection = "transaction")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Account {
+public class Transaction {
     @Id
-    private String accountId;
-
-    private String customerId;
-    private String accountNumber;
-    private AccountEnums.AccountType accountType;
-    private BigDecimal balance;
+    private String transactionId;
+    private String fromAccountId;
+    private String toAccountId;
+    private BigDecimal amount;
     private String currency;
-    private AccountEnums.AccountStatus status;
+    private TransactionEnum.TransactionType type;
+    private TransactionEnum.TransactionStatus status;
+    private String description;
     @CreatedDate
     private LocalDateTime createdAt;
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
 
 }

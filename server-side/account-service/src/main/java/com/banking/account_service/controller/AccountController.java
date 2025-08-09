@@ -1,4 +1,5 @@
 package com.banking.account_service.controller;
+import com.banking.account_service.dto.UpdateAccountDto;
 import com.banking.account_service.model.Account;
 import com.banking.account_service.service.AccountService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/accounts")
+@CrossOrigin
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountService accountService;
@@ -34,12 +36,11 @@ public class AccountController {
     }
 
     @PutMapping("/{accountId}")
-    public ResponseEntity<Account> updateAccount(@PathVariable String accountId,
-                                                 @RequestBody Account updatedAccount) {
-        return accountService.updateAccount(accountId, updatedAccount)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Account> updateAccount(@PathVariable String accountId, @RequestBody UpdateAccountDto dto) {
+        Account updatedAccount = accountService.updateAccount(accountId, dto);
+        return ResponseEntity.ok(updatedAccount);
     }
+
 
     @GetMapping("/{accountId}/balance")
     public ResponseEntity<BigDecimal> getBalance(@PathVariable String accountId) {

@@ -3,8 +3,6 @@ import com.banking.account_service.model.Customer;
 import com.banking.account_service.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
