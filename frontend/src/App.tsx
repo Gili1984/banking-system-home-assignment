@@ -1,12 +1,12 @@
 import './App.css'
-import { Home } from './assets/pages/home'
+import AppRouter from './assets/AppRouter'
 
 
 function App() {
 
   return (
     <>
-    <Home/>
+    <AppRouter />
     </>
   )
 }

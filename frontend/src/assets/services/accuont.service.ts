@@ -12,3 +12,8 @@ export const getAccountsByCustomerId = async (customerId: string): Promise<Accou
   
   return response.data;
 };
+
+export const createAccount = async (accountData: Partial<Account>): Promise<Account> => {
+  const { data } = await accuontServerApi.post('/accounts', accountData);
+  return data;
+};

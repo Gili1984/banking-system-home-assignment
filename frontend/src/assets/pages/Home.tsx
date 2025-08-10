@@ -1,6 +1,7 @@
 import React from 'react'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { SearchAccuont } from './SearchAccount';
+import { Link } from 'react-router-dom';
 
 export const Home: React.FC = () => {
 
@@ -16,7 +17,19 @@ export const Home: React.FC = () => {
               <a className="nav-link text-white" href="#">Home</a>
             </li>
             <li className="nav-item mx-2">
-              <a className="nav-link text-white" href="#">Link</a>
+              <div className="dropdown">
+                <button className="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  פעולות נוספות
+                </button>
+                <ul className="dropdown-menu">
+                  <li>
+                    <Link className="dropdown-item" to="/create-account">
+                      יצירת חשבון
+                    </Link>
+                  </li>                  <li><a className="dropdown-item" href="#">הפקדה/משיכה</a></li>
+                  <li><a className="dropdown-item" href="#">העברות</a></li>
+                </ul>
+              </div>
             </li>
             <li className="nav-item mx-2">
               <a className="nav-link text-white disabled" aria-disabled="true">Disabled</a>
