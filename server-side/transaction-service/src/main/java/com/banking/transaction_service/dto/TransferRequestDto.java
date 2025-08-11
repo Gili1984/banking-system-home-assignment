@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 
 @Data
 public class TransferRequestDto  {
-    private String fromAccountId;
-    private String toAccountId;
+    private String fromAccountNumber;
+    private String toAccountNumber;
     private BigDecimal amount;
     private String currency;
     private TransactionEnum.TransactionType type;

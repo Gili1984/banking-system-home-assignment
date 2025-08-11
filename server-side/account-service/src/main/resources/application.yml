@@ -4,6 +4,8 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/accounts
+      auto-index-creation: true
 
 server:
   port: 8081
+

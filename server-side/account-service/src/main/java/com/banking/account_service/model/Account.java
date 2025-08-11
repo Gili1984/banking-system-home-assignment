@@ -3,6 +3,7 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -16,8 +17,8 @@ import java.time.LocalDateTime;
 public class Account {
     @Id
     private String accountId;
-
     private String customerId;
+    @Indexed(unique = true)
     private String accountNumber;
     private AccountEnums.AccountType accountType;
     private BigDecimal balance;

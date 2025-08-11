@@ -21,35 +21,13 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @PostMapping("/deposit")
-    public String deposit(@RequestBody DepositAndWithdrawDto request) {
-        try {
-            Transaction transaction = transactionService.deposit(request);
-            return "ההפקדה בוצעה בהצלחה";
-        } catch (FromAccountServiceException ex) {
-            if ("2".equals(ex.getErrorNumber())) {
-                return "חשבון לא קיים במערכת";
-            }
-        } catch (Exception ex) {
-            return "ההפקדה לא בוצע- שגיאת רשת";
-        }
-        return "";
+    public ResponseEntity<Transaction> deposit(@RequestBody DepositAndWithdrawDto request) {
+        return ResponseEntity.ok(transactionService.deposit(request));
     }
 
     @PostMapping("/withdraw")
-    public String withdraw(@RequestBody DepositAndWithdrawDto request) {
-        try {
-            Transaction transaction = transactionService.withdraw(request);
-            return "ההפקדה בוצעה בהצלחה";
-        } catch (FromAccountServiceException ex) {
-            if ("2".equals(ex.getErrorNumber())) {
-                return "חשבון לא קיים במערכת";
-            } else if ("3".equals(ex.getErrorNumber())) {
-                return "אין יתרה בחשבונך";
-            }
-        } catch (Exception ex) {
-            return "ההפקדה לא בוצע- שגיאת רשת";
-        }
-        return "";
+    public ResponseEntity<Transaction> withdraw(@RequestBody DepositAndWithdrawDto request) {
+        return ResponseEntity.ok(transactionService.withdraw(request));
     }
 
     @PostMapping("/transfer")

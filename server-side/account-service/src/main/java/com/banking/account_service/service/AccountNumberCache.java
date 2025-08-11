@@ -24,8 +24,13 @@ public class AccountNumberCache {
         accountNumbers.add(accountNumber);
     }
 
+    public void clear() {
+        accountNumbers.clear();
+    }
+
     @PostConstruct
     public void loadAccountNumbers() {
+        clear();
         List<String> allAccountNumbers = accountRepository.findAllAccountNumbers();
         accountNumbers.addAll(allAccountNumbers);
     }

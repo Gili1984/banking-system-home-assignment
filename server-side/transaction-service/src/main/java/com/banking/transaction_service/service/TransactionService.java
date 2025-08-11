@@ -5,7 +5,6 @@ import com.banking.transaction_service.exception.FromAccountServiceException;
 import com.banking.transaction_service.model.Transaction;
 import com.banking.transaction_service.model.TransactionEnum;
 import com.banking.transaction_service.repository.TransactionRepository;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +12,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -34,7 +34,7 @@ public class TransactionService {
     public Transaction deposit(DepositAndWithdrawDto request) {
         Transaction tx = Transaction.builder()
                 .fromAccountId(null)
-                .toAccountId(request.getAccountNumber()) // פה את שולחת accountNumber כ-id
+                .toAccountId(request.getAccountNumber())
                 .amount(request.getAmount())
                 .currency(request.getCurrency())
                 .description(request.getDescription())
@@ -45,24 +45,16 @@ public class TransactionService {
 
         tx = transactionRepository.save(tx);
 
+        String url = ACCOUNT_SERVICE_BASE_URL + "/" + request.getAccountNumber();
+
         try {
-            UpdateAccountDto updateDto = new UpdateAccountDto();
-            updateDto.setOperationType(TransactionEnum.TransactionType.DEPOSIT);
-            updateDto.setAmount(request.getAmount());
-
-            String url = ACCOUNT_SERVICE_BASE_URL + "/" + request.getAccountNumber();
-
-            HttpEntity<UpdateAccountDto> httpRequest = new HttpEntity<>(updateDto);
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, httpRequest, String.class);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                tx.setStatus(TransactionEnum.TransactionStatus.FAILED);
-                transactionRepository.save(tx);
-                throw new FromAccountServiceException(
-                        "Account update failed",
-                        response.getStatusCodeValue(),
-                        response.getBody()
-                );            }
+            executeAccountUpdate(
+                    url,
+                    request.getAmount(),
+                    TransactionEnum.TransactionType.DEPOSIT,
+                    tx,
+                    false
+            );
 
             tx.setStatus(TransactionEnum.TransactionStatus.COMPLETED);
             return transactionRepository.save(tx);
@@ -76,7 +68,7 @@ public class TransactionService {
 
     public Transaction withdraw(DepositAndWithdrawDto request) {
         Transaction tx = Transaction.builder()
-                .fromAccountId(request.getAccountNumber()) // פה את שולחת accountNumber כ-id
+                .fromAccountId(request.getAccountNumber())
                 .toAccountId(null)
                 .amount(request.getAmount())
                 .currency(request.getCurrency())
@@ -88,38 +80,33 @@ public class TransactionService {
 
         tx = transactionRepository.save(tx);
 
+        String url = ACCOUNT_SERVICE_BASE_URL + "/" + request.getAccountNumber();
+
         try {
-            UpdateAccountDto updateDto = new UpdateAccountDto();
-            updateDto.setOperationType(TransactionEnum.TransactionType.WITHDRAWAL);
-            updateDto.setAmount(request.getAmount());
-
-            String url = ACCOUNT_SERVICE_BASE_URL + "/" + request.getAccountNumber();
-
-            HttpEntity<UpdateAccountDto> httpRequest = new HttpEntity<>(updateDto);
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, httpRequest, String.class);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                tx.setStatus(TransactionEnum.TransactionStatus.FAILED);
-                transactionRepository.save(tx);
-                throw new FromAccountServiceException(
-                        "Account update failed",
-                        response.getStatusCodeValue(),
-                        response.getBody()
-                );            }
+            executeAccountUpdate(
+                    url,
+                    request.getAmount(),
+                    TransactionEnum.TransactionType.WITHDRAWAL,
+                    tx,
+                    false
+            );
 
             tx.setStatus(TransactionEnum.TransactionStatus.COMPLETED);
             return transactionRepository.save(tx);
 
-        } catch (RestClientException ex) {
+        } catch (Exception ex) {
             tx.setStatus(TransactionEnum.TransactionStatus.FAILED);
             transactionRepository.save(tx);
             throw new RuntimeException("Account service error: " + ex.getMessage(), ex);
         }
     }
+
+
     public Transaction transfer(TransferRequestDto request) {
+
         Transaction tx = Transaction.builder()
-                .fromAccountId(request.getFromAccountId())
-                .toAccountId(request.getToAccountId())
+                .fromAccountId(request.getFromAccountNumber())
+                .toAccountId(request.getToAccountNumber())
                 .amount(request.getAmount())
                 .currency(request.getCurrency())
                 .description(request.getDescription())
@@ -130,63 +117,16 @@ public class TransactionService {
 
         tx = transactionRepository.save(tx);
 
-        String fromUrl = ACCOUNT_SERVICE_BASE_URL + "/" + request.getFromAccountId();
-        String toUrl = ACCOUNT_SERVICE_BASE_URL + "/" + request.getToAccountId();
+        String fromUrl = ACCOUNT_SERVICE_BASE_URL + "/" + request.getFromAccountNumber();
+        String toUrl = ACCOUNT_SERVICE_BASE_URL + "/" + request.getToAccountNumber();
 
         try {
-            UpdateAccountDto withdrawDto = new UpdateAccountDto();
-            withdrawDto.setOperationType(TransactionEnum.TransactionType.WITHDRAWAL);
-            withdrawDto.setAmount(request.getAmount());
-
-            HttpEntity<UpdateAccountDto> withdrawRequest = new HttpEntity<>(withdrawDto);
-            ResponseEntity<String> withdrawResponse = restTemplate.exchange(
-                    fromUrl, HttpMethod.PUT, withdrawRequest, String.class
-            );
-
-            if (!withdrawResponse.getStatusCode().is2xxSuccessful()) {
-                tx.setStatus(TransactionEnum.TransactionStatus.FAILED);
-                transactionRepository.save(tx);
-                throw new FromAccountServiceException(
-                        "From account update failed",
-                        withdrawResponse.getStatusCodeValue(),
-                        withdrawResponse.getBody()
-                );
+            executeAccountUpdate(fromUrl, request.getAmount(), TransactionEnum.TransactionType.WITHDRAWAL, tx, false);
+            try {
+                executeAccountUpdate(toUrl, request.getAmount(), TransactionEnum.TransactionType.DEPOSIT, tx, true, fromUrl);
+            } catch (FromAccountServiceException ex) {
+                throw ex;
             }
-
-            UpdateAccountDto depositDto = new UpdateAccountDto();
-            depositDto.setOperationType(TransactionEnum.TransactionType.DEPOSIT);
-            depositDto.setAmount(request.getAmount());
-
-            HttpEntity<UpdateAccountDto> depositRequest = new HttpEntity<>(depositDto);
-            ResponseEntity<String> depositResponse = restTemplate.exchange(
-                    toUrl, HttpMethod.PUT, depositRequest, String.class
-            );
-
-            if (!depositResponse.getStatusCode().is2xxSuccessful()) {
-                boolean rollbackSucceeded = false;
-                try {
-                    rollbackFromAccount(fromUrl, request.getAmount());
-                    rollbackSucceeded = true;
-                } catch (Exception rollbackEx) {
-                    log.error("Rollback failed for transaction {}: {}", tx.getTransactionId(), rollbackEx.getMessage(), rollbackEx);
-                }
-
-                tx.setStatus(TransactionEnum.TransactionStatus.FAILED);
-                transactionRepository.save(tx);
-
-                if (rollbackSucceeded) {
-                    log.info("Transaction {} marked FAILED after successful rollback", tx.getTransactionId());
-                } else {
-                    log.error("Transaction {} marked FAILED but rollback failed — manual intervention required!", tx.getTransactionId());
-                }
-
-                throw new FromAccountServiceException(
-                        "To account update failed",
-                        depositResponse.getStatusCodeValue(),
-                        depositResponse.getBody()
-                );
-            }
-
             tx.setStatus(TransactionEnum.TransactionStatus.COMPLETED);
             return transactionRepository.save(tx);
 
@@ -197,18 +137,77 @@ public class TransactionService {
         }
     }
 
+    /**
+     * func for update account
+     * @param url url for account service path
+     * @param amount the amount fot update
+     * @param type deposit/withdraw
+     * @param tx the transaction object build
+     * @param rollbackOnFailure  do make rollback(boolean)
+     * @param rollbackUrl url for rollback
+     */
+    private void executeAccountUpdate(String url, BigDecimal amount, TransactionEnum.TransactionType type, Transaction tx, boolean rollbackOnFailure, String... rollbackUrl) {
+        UpdateAccountDto dto = new UpdateAccountDto();
+        dto.setOperationType(type);
+        dto.setAmount(amount);
+
+        HttpEntity<UpdateAccountDto> request = new HttpEntity<>(dto);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, request, String.class);
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                handleFailure(tx, rollbackOnFailure,
+                        rollbackUrl.length > 0 ? rollbackUrl[0] : null,
+                        amount,
+                        response.getBody(),
+                        response.getStatusCodeValue(),
+                        "Account update failed");            }
+        } catch (HttpClientErrorException ex) {
+            handleFailure(tx, rollbackOnFailure,
+                    rollbackUrl.length > 0 ? rollbackUrl[0] : null,
+                    amount,
+                    ex.getResponseBodyAsString(),
+                    ex.getStatusCode().value(),
+                    "Account update failed");     }
+    }
+
+    private void handleFailure(Transaction tx, boolean rollbackOnFailure, String rollbackUrl,
+                               BigDecimal amount, String errorBody, int statusCode, String failureMessage) {
+        boolean rollbackSucceeded = false;
+
+        if (rollbackOnFailure && rollbackUrl != null) {
+            try {
+                rollbackFromAccount(rollbackUrl, amount);
+                rollbackSucceeded = true;
+            } catch (Exception rollbackEx) {
+                log.error("Rollback failed for transaction {}: {}", tx.getTransactionId(), rollbackEx.getMessage(), rollbackEx);
+            }
+        }
+
+        tx.setStatus(TransactionEnum.TransactionStatus.FAILED);
+        transactionRepository.save(tx);
+
+        if (rollbackOnFailure) {
+            if (rollbackSucceeded) {
+                log.info("Transaction {} marked FAILED after successful rollback", tx.getTransactionId());
+            } else {
+                log.error("Transaction {} marked FAILED but rollback failed — manual intervention required!", tx.getTransactionId());
+            }
+        }
+
+        throw new FromAccountServiceException(failureMessage, statusCode, errorBody);
+    }
+
+
+
 
     private void rollbackFromAccount(String fromUrl, BigDecimal amount) {
-        try {
-            UpdateAccountDto rollbackDto = new UpdateAccountDto();
-            rollbackDto.setOperationType(TransactionEnum.TransactionType.DEPOSIT);
-            rollbackDto.setAmount(amount);
+        UpdateAccountDto rollbackDto = new UpdateAccountDto();
+        rollbackDto.setOperationType(TransactionEnum.TransactionType.DEPOSIT);
+        rollbackDto.setAmount(amount);
 
-            HttpEntity<UpdateAccountDto> rollbackRequest = new HttpEntity<>(rollbackDto);
-            restTemplate.exchange(fromUrl, HttpMethod.PUT, rollbackRequest, String.class);
-        } catch (RestClientException ex) {
-            System.err.println("Rollback failed: " + ex.getMessage());
-        }
+        HttpEntity<UpdateAccountDto> rollbackRequest = new HttpEntity<>(rollbackDto);
+        restTemplate.exchange(fromUrl, HttpMethod.PUT, rollbackRequest, String.class);
     }
 
 

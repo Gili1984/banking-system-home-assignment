@@ -35,9 +35,9 @@ public class AccountController {
         return ResponseEntity.ok(accounts);
     }
 
-    @PutMapping("/{accountId}")
-    public ResponseEntity<Account> updateAccount(@PathVariable String accountId, @RequestBody UpdateAccountDto dto) {
-        Account updatedAccount = accountService.updateAccount(accountId, dto);
+    @PutMapping("/{accountNumber}")
+    public ResponseEntity<Account> updateAccount(@PathVariable String accountNumber, @RequestBody UpdateAccountDto dto) {
+        Account updatedAccount = accountService.updateAccount(accountNumber, dto);
         return ResponseEntity.ok(updatedAccount);
     }
 
