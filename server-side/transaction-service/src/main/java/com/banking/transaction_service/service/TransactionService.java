@@ -34,7 +34,7 @@ public class TransactionService {
     public Transaction deposit(DepositAndWithdrawDto request) {
         Transaction tx = Transaction.builder()
                 .fromAccountId(null)
-                .toAccountId(request.getAccountNumber())
+                .fromAccountId(getAccountIdFromAccountNumber(request.getAccountNumber()))
                 .amount(request.getAmount())
                 .currency(request.getCurrency())
                 .description(request.getDescription())
@@ -68,7 +68,7 @@ public class TransactionService {
 
     public Transaction withdraw(DepositAndWithdrawDto request) {
         Transaction tx = Transaction.builder()
-                .fromAccountId(request.getAccountNumber())
+                .fromAccountId(getAccountIdFromAccountNumber(request.getAccountNumber()))
                 .toAccountId(null)
                 .amount(request.getAmount())
                 .currency(request.getCurrency())
@@ -105,8 +105,8 @@ public class TransactionService {
     public Transaction transfer(TransferRequestDto request) {
 
         Transaction tx = Transaction.builder()
-                .fromAccountId(request.getFromAccountNumber())
-                .toAccountId(request.getToAccountNumber())
+                .fromAccountId(getAccountIdFromAccountNumber(request.getFromAccountNumber()))
+                .toAccountId(getAccountIdFromAccountNumber(request.getToAccountNumber()))
                 .amount(request.getAmount())
                 .currency(request.getCurrency())
                 .description(request.getDescription())
@@ -134,6 +134,24 @@ public class TransactionService {
             tx.setStatus(TransactionEnum.TransactionStatus.FAILED);
             transactionRepository.save(tx);
             throw new RuntimeException("Account service error: " + ex.getMessage(), ex);
+        }
+    }
+    private String getAccountIdFromAccountNumber(String accountNumber) {
+        String url = ACCOUNT_SERVICE_BASE_URL +"/getIdByAccountNumber/"+ accountNumber;
+        try {
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            }
+            else {
+                    String errorMsg = "Failed to get accountId: received non-success status or empty body from account service";
+                    log.error(errorMsg + " for accountNumber: {}", accountNumber);
+                    throw new FromAccountServiceException(errorMsg, response.getStatusCodeValue(), "Empty or invalid response");
+
+            }
+        } catch (RestClientException ex) {
+            log.error("Error calling account service for accountNumber {}: {}", accountNumber, ex.getMessage(), ex);
+            throw new FromAccountServiceException("Account service unreachable or returned error: " + ex.getMessage(), 500, ex.getMessage());
         }
     }
 
@@ -211,7 +229,8 @@ public class TransactionService {
     }
 
 
-    public List<Transaction> getTransactionsForAccount(String accountId) {
+    public List<Transaction> getTransactionsForAccount(String accountNumber) {
+        String accountId=getAccountIdFromAccountNumber(accountNumber);
         return transactionRepository.findByFromAccountIdOrToAccountId(accountId, accountId);
     }
 

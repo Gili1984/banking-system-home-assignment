@@ -1,14 +1,11 @@
 package com.banking.transaction_service.controller;
 
 import com.banking.transaction_service.dto.*;
-import com.banking.transaction_service.exception.FromAccountServiceException;
 import com.banking.transaction_service.model.Transaction;
 import com.banking.transaction_service.service.TransactionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.List;
 
@@ -35,9 +32,9 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.transfer(request));
     }
 
-    @GetMapping("/account/{accountId}")
-    public ResponseEntity<List<Transaction>> getTransactionsByAccount(@PathVariable String accountId) {
-        return ResponseEntity.ok(transactionService.getTransactionsForAccount(accountId));
+    @GetMapping("/account/{accountNumber}")
+    public ResponseEntity<List<Transaction>> getTransactionsByAccount(@PathVariable String accountNumber) {
+        return ResponseEntity.ok(transactionService.getTransactionsForAccount(accountNumber));
     }
 
     @GetMapping("/{transactionId}")

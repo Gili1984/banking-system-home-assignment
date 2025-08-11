@@ -1,4 +1,5 @@
 package com.banking.transaction_service.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -13,9 +14,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Transaction {
+    @JsonIgnore
     @Id
     private String transactionId;
+    @JsonIgnore
     private String fromAccountId;
+    @JsonIgnore
     private String toAccountId;
     private BigDecimal amount;
     private String currency;

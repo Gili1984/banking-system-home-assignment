@@ -1,4 +1,5 @@
 package com.banking.account_service.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Account {
+    @JsonIgnore
     @Id
     private String accountId;
     private String customerId;

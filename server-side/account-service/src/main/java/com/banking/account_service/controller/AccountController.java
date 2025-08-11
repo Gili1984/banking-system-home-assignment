@@ -2,6 +2,8 @@ package com.banking.account_service.controller;
 import com.banking.account_service.dto.UpdateAccountDto;
 import com.banking.account_service.model.Account;
 import com.banking.account_service.service.AccountService;
+import com.banking.account_service.util.AccountCache;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountService accountService;
+    private final AccountCache accountCache;
 
     @PostMapping
     public ResponseEntity<Account> createAccount(@RequestBody Account account) {
@@ -36,7 +39,7 @@ public class AccountController {
     }
 
     @PutMapping("/{accountNumber}")
-    public ResponseEntity<Account> updateAccount(@PathVariable String accountNumber, @RequestBody UpdateAccountDto dto) {
+    public ResponseEntity<Account> updateAccount(@PathVariable String accountNumber, @Valid @RequestBody UpdateAccountDto dto) {
         Account updatedAccount = accountService.updateAccount(accountNumber, dto);
         return ResponseEntity.ok(updatedAccount);
     }
@@ -47,5 +50,15 @@ public class AccountController {
         return accountService.getAccountBalance(accountId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/getIdByAccountNumber/{accountNumber}")
+    public ResponseEntity<String> getAccountIdByAccountNumber(@PathVariable String accountNumber) {
+        String accountId = accountCache.get(accountNumber);
+        if (accountId != null) {
+            return ResponseEntity.ok(accountId);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

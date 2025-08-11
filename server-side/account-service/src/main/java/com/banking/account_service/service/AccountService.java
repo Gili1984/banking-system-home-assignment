@@ -7,6 +7,7 @@ import com.banking.account_service.model.AccountEnums;
 import com.banking.account_service.repository.AccountRepository;
 import com.banking.account_service.util.AccountCache;
 import com.banking.account_service.util.AccountNumberGenerator;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +25,11 @@ public class AccountService {
     private final AccountNumberCache accountNumberCache;
     private final AccountCache accountCache;
 
+    @PostConstruct
+    public void loadCacheFromDb() {
+        List<Account> allAccounts = accountRepository.findAll();
+        allAccounts.forEach(acc -> accountCache.put(acc.getAccountNumber(), acc.getAccountId()));
+    }
 
     public Account createAccount(Account account){
         String accountNumber;
@@ -41,13 +47,9 @@ public class AccountService {
 
         if (accountNumber != null && savedAccount.getAccountId() != null) {
             accountCache.put(accountNumber, savedAccount.getAccountId());
-        } else {
-            System.out.println("Warning: accountNumber or accountId is null in createAccount");
         }
         return savedAccount;
     }
-
-
 
     private String generateUniqueAccountNumber() {
         String accountNumber;
