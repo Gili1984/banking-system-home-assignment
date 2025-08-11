@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { getuseCustomers } from '../services/customer.service'
+import { getCustomerById } from '../services/customer.service'
 
-export const useCustomer = () => {
+export const useCustomerById = (customerId: string, p0: { enabled: boolean; }) => {
   return useQuery({
-    queryKey: ['customers'],
-    queryFn: getuseCustomers,
-  })
-}
+    queryKey: ['customers', customerId],
+    queryFn: () => getCustomerById(customerId),
+    enabled: !!customerId, 
+  });
+};

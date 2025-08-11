@@ -7,9 +7,7 @@ export const getAccounts = async (): Promise<Account[]> => {
 }
 
 export const getAccountsByCustomerId = async (customerId: string): Promise<Account[]> => {
-  const response = await accuontServerApi.get(`/accounts/customer/${customerId}`);
-  console.log("response.data",response.data);
-  
+  const response = await accuontServerApi.get(`/accounts/customer/${customerId}`);  
   return response.data;
 };
 

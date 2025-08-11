@@ -15,8 +15,6 @@ export const SearchAccuont: React.FC = () => {
   const handleSearch = () => {
     if (inputRef.current) {
       setSubmittedId(inputRef.current.value); 
-      console.log("submitted",submittedId);
-      
     }
   };
 

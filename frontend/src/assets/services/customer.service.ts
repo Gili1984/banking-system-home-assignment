@@ -5,3 +5,9 @@ export const getuseCustomers = async (): Promise<Customer[]> => {
   const response = await accuontServerApi.get('/customers')
   return response.data
 }
+
+
+export const getCustomerById = async (customerId: string): Promise<Customer> => {
+  const response = await accuontServerApi.get(`/customers/${customerId}`);  
+  return response.data;
+};
